@@ -1,0 +1,32 @@
+[
+  {
+    "name": "dofa",
+    "filename": "dofa.glb",
+    "position": [
+      0,
+      0.05,
+      0
+    ],
+    "scale": [
+      1.5,
+      1.5,
+      1.5
+    ],
+    "details": "sofa modern and enjoy the view relaxed on your home"
+  },
+  {
+    "name": "table",
+    "filename": "table.glb",
+    "position": [
+      -4,
+      0.05,
+      0
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "details": "a table with flower pot and note added with a mat "
+  }
+]
