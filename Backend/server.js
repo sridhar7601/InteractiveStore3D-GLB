@@ -19,7 +19,7 @@ AWS.config.update({
 });
 
 const s3 = new AWS.S3();
-const BUCKET_NAME = '3d-store-challenge';
+const BUCKET_NAME = '3d-store-challenge-sridhar';
 
 // Configure multer for memory storage
 const upload = multer({ storage: multer.memoryStorage() });
