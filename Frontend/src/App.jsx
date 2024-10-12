@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import UserPage from './UserPage';
-import AdminPage from './Adminpage';
+import UserPage from './components/UserPage';
+import AdminPage from './components/AdminPage'; // Case-sensitive match
 
 function App() {
   return (
