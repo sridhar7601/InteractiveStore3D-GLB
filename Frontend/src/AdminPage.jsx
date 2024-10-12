@@ -26,10 +26,17 @@ function AdminPage() {
   const [scale, setScale] = useState({ x: 1, y: 1, z: 1 });
   const [details, setDetails] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [showStorePreview, setShowStorePreview] = useState(false);
 
   useEffect(() => {
     fetchModels();
   }, []);
+
+  useEffect(() => {
+    if (showStorePreview) {
+      fetchModels();
+    }
+  }, [showStorePreview]);
 
   const fetchModels = async () => {
     try {
@@ -109,6 +116,38 @@ function AdminPage() {
     setDetails('');
   };
 
+  // New function to handle real-time updates
+  const handleRealTimeUpdate = (updatedModel) => {
+    setModels(prevModels => prevModels.map(model => 
+      model.filename === updatedModel.filename ? updatedModel : model
+    ));
+  };
+
+  // Modified position and scale change handlers
+  const handlePositionChange = (axis, value) => {
+    const newPosition = { ...position, [axis]: parseFloat(value) };
+    setPosition(newPosition);
+    if (selectedModel) {
+      const updatedModel = { 
+        ...selectedModel, 
+        position: [newPosition.x, newPosition.y, newPosition.z] 
+      };
+      handleRealTimeUpdate(updatedModel);
+    }
+  };
+
+  const handleScaleChange = (axis, value) => {
+    const newScale = { ...scale, [axis]: parseFloat(value) };
+    setScale(newScale);
+    if (selectedModel) {
+      const updatedModel = { 
+        ...selectedModel, 
+        scale: [newScale.x, newScale.y, newScale.z] 
+      };
+      handleRealTimeUpdate(updatedModel);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
       <div style={{ width: '300px', padding: '20px', borderRight: '1px solid #ccc', overflowY: 'auto' }}>
@@ -132,21 +171,21 @@ function AdminPage() {
             <input
               type="number"
               value={position.x}
-              onChange={(e) => setPosition({ ...position, x: parseFloat(e.target.value) })}
+              onChange={(e) => handlePositionChange('x', e.target.value)}
               placeholder="X"
               style={{ width: '50px', marginRight: '5px' }}
             />
             <input
               type="number"
               value={position.y}
-              onChange={(e) => setPosition({ ...position, y: parseFloat(e.target.value) })}
+              onChange={(e) => handlePositionChange('y', e.target.value)}
               placeholder="Y"
               style={{ width: '50px', marginRight: '5px' }}
             />
             <input
               type="number"
               value={position.z}
-              onChange={(e) => setPosition({ ...position, z: parseFloat(e.target.value) })}
+              onChange={(e) => handlePositionChange('z', e.target.value)}
               placeholder="Z"
               style={{ width: '50px' }}
             />
@@ -156,21 +195,21 @@ function AdminPage() {
             <input
               type="number"
               value={scale.x}
-              onChange={(e) => setScale({ ...scale, x: parseFloat(e.target.value) })}
+              onChange={(e) => handleScaleChange('x', e.target.value)}
               placeholder="X"
               style={{ width: '50px', marginRight: '5px' }}
             />
             <input
               type="number"
               value={scale.y}
-              onChange={(e) => setScale({ ...scale, y: parseFloat(e.target.value) })}
+              onChange={(e) => handleScaleChange('y', e.target.value)}
               placeholder="Y"
               style={{ width: '50px', marginRight: '5px' }}
             />
             <input
               type="number"
               value={scale.z}
-              onChange={(e) => setScale({ ...scale, z: parseFloat(e.target.value) })}
+              onChange={(e) => handleScaleChange('z', e.target.value)}
               placeholder="Z"
               style={{ width: '50px' }}
             />
@@ -238,9 +277,52 @@ function AdminPage() {
             </li>
           ))}
         </ul>
+        <button 
+          onClick={() => setShowStorePreview(!showStorePreview)}
+          style={{ 
+            padding: '5px 10px', 
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            border: 'none',
+            cursor: 'pointer',
+            marginTop: '20px'
+          }}
+        >
+          {showStorePreview ? 'Hide Store Preview' : 'Show Store Preview'}
+        </button>
       </div>
+
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {selectedModel ? (
+        {showStorePreview ? (
+          <Canvas
+            camera={{ position: [0, 5, 10], fov: 60 }}
+            style={{ background: '#f0f0f0', flex: 1 }}
+          >
+            <ambientLight intensity={0.5} />
+            <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
+            <pointLight position={[-10, -10, -10]} intensity={0.5} />
+            <Suspense fallback={<Loader />}>
+              <Model url="/store.glb" position={[0, 0, 0]} scale={[1, 1, 1]} />
+              {models.map((model) => (
+                <Model
+                  key={model.filename}
+                  url={`http://localhost:3000/uploads/${model.filename}`}
+                  position={model.position}
+                  scale={model.scale}
+                />
+              ))}
+            </Suspense>
+            <OrbitControls
+              rotateSpeed={0.5}
+              zoomSpeed={0.5}
+              panSpeed={0.5}
+              minDistance={2}
+              maxDistance={35}
+              minPolarAngle={0}
+              maxPolarAngle={Math.PI / 2}
+            />
+          </Canvas>
+        ) : selectedModel ? (
           <>
             <Canvas
               camera={{ position: [0, 0, 5] }}
@@ -250,14 +332,13 @@ function AdminPage() {
               <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
               <PerspectiveCamera makeDefault position={[0, 1, 5]} fov={50} />
               <Suspense fallback={<Loader />}>
-                <Model 
-                  url={`http://localhost:3000/uploads/${selectedModel.filename}`} 
-                  position={[position.x, position.y, position.z]} 
-                  scale={[scale.x, scale.y, scale.z]} 
+                <Model
+                  url={`http://localhost:3000/uploads/${selectedModel.filename}`}
+                  position={[position.x, position.y, position.z]}
+                  scale={[scale.x, scale.y, scale.z]}
                 />
-                <Environment preset="sunset" background />
               </Suspense>
-              <OrbitControls 
+              <OrbitControls
                 rotateSpeed={0.5}
                 zoomSpeed={0.5}
                 panSpeed={0.5}
@@ -267,7 +348,7 @@ function AdminPage() {
                 maxPolarAngle={Math.PI / 2}
               />
             </Canvas>
-            <div style={{ padding: '20px', background: '#f0f0f0', color:'grey'}}>
+            <div style={{ padding: '20px', background: '#f0f0f0', color: 'grey' }}>
               <h3>Model Details</h3>
               <p><strong>Name:</strong> {selectedModel.name}</p>
               <p><strong>Position:</strong> X: {position.x}, Y: {position.y}, Z: {position.z}</p>
@@ -277,7 +358,7 @@ function AdminPage() {
           </>
         ) : (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <p>Select a model to preview</p>
+            <p>Select a model to preview or show store preview</p>
           </div>
         )}
       </div>

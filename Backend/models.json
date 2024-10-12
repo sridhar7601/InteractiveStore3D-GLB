@@ -3,14 +3,19 @@
     "name": "dofa",
     "filename": "dofa.glb",
     "position": [
-      0,
+      1,
       0.05,
-      0
+      2
     ],
     "scale": [
-      1.5,
-      1.5,
-      1.5
+      2.5,
+      2.5,
+      2.5
+    ],
+    "rotation": [
+      0,
+      50,
+      0
     ],
     "details": "sofa modern and enjoy the view relaxed on your home"
   },
@@ -27,6 +32,51 @@
       1,
       1
     ],
+    "rotation": [
+      0,
+      1,
+      0
+    ],
     "details": "a table with flower pot and note added with a mat "
+  },
+  {
+    "name": "glbl-stool",
+    "filename": "glbl-stool.glb",
+    "position": [
+      1,
+      0.05,
+      -2
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "rotation": [
+      0,
+      1,
+      0
+    ],
+    "details": "a stool for home decour"
+  },
+  {
+    "name": "single-stem-plant",
+    "filename": "single-stem-plant.glb",
+    "position": [
+      1,
+      0.83,
+      -2
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "rotation": [
+      0,
+      1,
+      0
+    ],
+    "details": "a planet with single stem long "
   }
 ]
