@@ -1,9 +1,9 @@
-import React, { Suspense, useRef, useState, useEffect,useMemo } from 'react'
+import React, { Suspense, useRef, useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, useGLTF, PerspectiveCamera, Environment, Html } from '@react-three/drei'
 import * as THREE from 'three'
-import LEDLight from './LEDLight'  // Adjust the path as necessary
+import ProfileLight from './ProfileLight'  // Adjust the path as necessary
 import OvalLEDLight from './OvalLEDLight'  // Adjust the path as necessary
 import TubeLEDLight from './TubeLEDLight'
 
@@ -16,8 +16,6 @@ function CursorManager({ isHovering }) {
   }, [isHovering])
   return null
 }
-
-
 
 function OptimizedModel({ url, position, rotation = [0, 0, 0], scale, onClick, isClickable = true, isApiProduct = false }) {
   const group = useRef()
@@ -124,6 +122,7 @@ function OptimizedModel({ url, position, rotation = [0, 0, 0], scale, onClick, i
     />
   )
 }
+
 function Loader() {
   return (
     <Html center>
@@ -134,6 +133,11 @@ function Loader() {
 
 function StoreScene({ onModelClick, models }) {
   const [isHovering, setIsHovering] = useState(false)
+  const BASE_URL = 'http://localhost:3000' // Update this if your backend URL changes
+
+  const getModelUrl = (filename) => {
+    return `${BASE_URL}/uploads/${encodeURIComponent(filename)}`
+  }
 
   return (
     <>
@@ -152,8 +156,10 @@ function StoreScene({ onModelClick, models }) {
         <PerspectiveCamera makeDefault position={[0, 5, 10]} fov={50} />
         <ambientLight intensity={0.5} />
         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} />
-
+        {/* <ProfileLight position={[5, 3, 5]} intensity={1.2} color="#FFA500" />
+        <ProfileLight position={[-5, 3, 5]} intensity={1.2} color="#FFA500" />
+        <ProfileLight position={[5, 3, -5]} intensity={1.2} color="#FFA500" />
+        <ProfileLight position={[-5, 3, -5]} intensity={1.2} color="#FFA500" /> */}
         <Suspense fallback={<Loader />}>
           <OptimizedModel 
             url="/store.glb" 
@@ -164,15 +170,14 @@ function StoreScene({ onModelClick, models }) {
           />
           {models.map((model) => (
             <OptimizedModel
-              key={model.name}  // Using model.name as the key
-              url={`http://localhost:3000/uploads/${model.filename}`}
+              key={model.name}
+              url={getModelUrl(model.filename)}
               position={model.position}
               rotation={model.rotation.map((deg) => deg * (Math.PI / 180))}
               scale={model.scale}
               onClick={() => onModelClick(model)}
               isClickable={true}
               isApiProduct={true}
-
             />
           ))}
           <OvalLEDLight 
@@ -197,7 +202,6 @@ function StoreScene({ onModelClick, models }) {
             color="#FFA500" 
           />
         </Suspense>
-
         <OrbitControls
           rotateSpeed={0.5}
           zoomSpeed={0.5}
@@ -208,14 +212,18 @@ function StoreScene({ onModelClick, models }) {
           maxPolarAngle={Math.PI / 2}
           onChange={() => setIsHovering(false)}
         />
-
       </Canvas>
     </>
   )
 }
 
-
 function ModelPreview({ model }) {
+  const BASE_URL = 'http://localhost:3000' // Update this if your backend URL changes
+
+  const getModelUrl = (filename) => {
+    return `${BASE_URL}/uploads/${encodeURIComponent(filename)}`
+  }
+
   return (
     <Canvas
       gl={{
@@ -231,7 +239,7 @@ function ModelPreview({ model }) {
       <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
       <Suspense fallback={null}>
         <OptimizedModel 
-          url={`http://localhost:3000/uploads/${model.filename}`} 
+          url={getModelUrl(model.filename)}
           position={[0, 0, 0]} 
           scale={model.scale} 
           isClickable={false} 
@@ -284,6 +292,7 @@ function UserPage() {
   const [showModal, setShowModal] = useState(false)
   const [selectedModel, setSelectedModel] = useState(null)
   const [models, setModels] = useState([])
+  const BASE_URL = 'http://localhost:3000' // Update this if your backend URL changes
 
   useEffect(() => {
     fetchModels()
@@ -291,7 +300,7 @@ function UserPage() {
 
   const fetchModels = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/models')
+      const response = await axios.get(`${BASE_URL}/models`)
       setModels(response.data)
     } catch (error) {
       console.error('Error fetching models:', error)
@@ -310,7 +319,7 @@ function UserPage() {
         <GlassModal onClose={() => setShowModal(false)}>
           <h2 style={{ color: '#086C62', textAlign: 'center' }}>{selectedModel.name}</h2>
           <ModelPreview model={selectedModel} />
-          <div style={{ marginTop: '20px',color:'black'}}>
+          <div style={{ marginTop: '20px', color:'black' }}>
             <h3>Model Details</h3>
             <p><strong>Position:</strong> X: {selectedModel.position[0]}, Y: {selectedModel.position[1]}, Z: {selectedModel.position[2]}</p>
             <p><strong>Scale:</strong> X: {selectedModel.scale[0]}, Y: {selectedModel.scale[1]}, Z: {selectedModel.scale[2]}</p>

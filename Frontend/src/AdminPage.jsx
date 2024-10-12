@@ -1,12 +1,39 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import axios from 'axios';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, PerspectiveCamera, Environment, Html } from '@react-three/drei';
 import * as THREE from 'three';
 
 function Model({ url, position, scale }) {
+  const group = useRef();
   const { scene } = useGLTF(url);
-  return <primitive object={scene} position={position} scale={scale} />;
+  
+  useEffect(() => {
+    scene.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+        if (child.material) {
+          if (child.material.map) {
+            child.material.map.anisotropy = 16;
+          }
+          child.material.roughness = 0.5;
+          child.material.metalness = 0.5;
+          child.material.envMapIntensity = 1;
+          child.material.needsUpdate = true;
+        }
+      }
+    });
+  }, [scene]);
+
+  useFrame(() => {
+    if (group.current) {
+      group.current.position.set(position[0], position[1], position[2]);
+      group.current.scale.set(scale[0], scale[1], scale[2]);
+    }
+  });
+
+  return <primitive ref={group} object={scene} />;
 }
 
 function Loader() {
@@ -24,9 +51,11 @@ function AdminPage() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
   const [scale, setScale] = useState({ x: 1, y: 1, z: 1 });
+  const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 }); // New state for rotation
   const [details, setDetails] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [showStorePreview, setShowStorePreview] = useState(false);
+  const BASE_URL = 'http://localhost:3000'; // Update this if your backend URL changes
 
   useEffect(() => {
     fetchModels();
@@ -40,7 +69,7 @@ function AdminPage() {
 
   const fetchModels = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/models');
+      const response = await axios.get(`${BASE_URL}/models`);
       setModels(response.data);
     } catch (error) {
       console.error('Error fetching models:', error);
@@ -60,12 +89,13 @@ function AdminPage() {
     const formData = new FormData();
     formData.append('model', selectedFile);
     formData.append('modelName', modelName.trim());
+    formData.append('rotation', JSON.stringify([rotation.x, rotation.y, rotation.z])); // Add rotation
     formData.append('position', JSON.stringify([position.x, position.y, position.z]));
     formData.append('scale', JSON.stringify([scale.x, scale.y, scale.z]));
     formData.append('details', details);
 
     try {
-      await axios.post('http://localhost:3000/upload', formData, {
+      await axios.post(`${BASE_URL}/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -82,6 +112,7 @@ function AdminPage() {
   const handleModelSelect = (model) => {
     setSelectedModel(model);
     setPosition({ x: model.position[0], y: model.position[1], z: model.position[2] });
+    setRotation({ x: model.rotation[0], y: model.rotation[1], z: model.rotation[2] }); // Set rotation
     setScale({ x: model.scale[0], y: model.scale[1], z: model.scale[2] });
     setDetails(model.details);
     setIsEditing(false);
@@ -90,11 +121,23 @@ function AdminPage() {
   const handleEdit = () => {
     setIsEditing(true);
   };
-
+// Add handler for rotation change
+const handleRotationChange = (axis, value) => {
+  const newRotation = { ...rotation, [axis]: parseFloat(value) };
+  setRotation(newRotation);
+  if (selectedModel) {
+    const updatedModel = { 
+      ...selectedModel, 
+      rotation: [newRotation.x, newRotation.y, newRotation.z] 
+    };
+    handleRealTimeUpdate(updatedModel);
+  }
+};
   const handleUpdate = async () => {
     try {
-      const response = await axios.put(`http://localhost:3000/models/${selectedModel.filename}`, {
+      const response = await axios.put(`${BASE_URL}/models/${selectedModel.filename}`, {
         position: [position.x, position.y, position.z],
+        rotation: [rotation.x, rotation.y, rotation.z], // Include rotation
         scale: [scale.x, scale.y, scale.z],
         details: details
       });
@@ -112,18 +155,21 @@ function AdminPage() {
     setModelName('');
     setSelectedFile(null);
     setPosition({ x: 0, y: 0, z: 0 });
+    setRotation({ x: 0, y: 0, z: 0 }); // Reset rotation
     setScale({ x: 1, y: 1, z: 1 });
     setDetails('');
   };
 
-  // New function to handle real-time updates
   const handleRealTimeUpdate = (updatedModel) => {
     setModels(prevModels => prevModels.map(model => 
       model.filename === updatedModel.filename ? updatedModel : model
     ));
   };
 
-  // Modified position and scale change handlers
+  const getModelUrl = (filename) => {
+    return `${BASE_URL}/uploads/${encodeURIComponent(filename)}`;
+  };
+
   const handlePositionChange = (axis, value) => {
     const newPosition = { ...position, [axis]: parseFloat(value) };
     setPosition(newPosition);
@@ -295,22 +341,32 @@ function AdminPage() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {showStorePreview ? (
           <Canvas
+            shadows
             camera={{ position: [0, 5, 10], fov: 60 }}
             style={{ background: '#f0f0f0', flex: 1 }}
+            gl={{ antialias: true, alpha: false }}
           >
+            <color attach="background" args={['#f0f0f0']} />
+            <fog attach="fog" args={['#f0f0f0', 0, 40]} />
             <ambientLight intensity={0.5} />
-            <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
-            <pointLight position={[-10, -10, -10]} intensity={0.5} />
+            <directionalLight
+              position={[5, 5, 5]}
+              intensity={1}
+              castShadow
+              shadow-mapSize-width={2048}
+              shadow-mapSize-height={2048}
+            />
             <Suspense fallback={<Loader />}>
               <Model url="/store.glb" position={[0, 0, 0]} scale={[1, 1, 1]} />
               {models.map((model) => (
                 <Model
                   key={model.filename}
-                  url={`http://localhost:3000/uploads/${model.filename}`}
+                  url={getModelUrl(model.filename)}
                   position={model.position}
                   scale={model.scale}
                 />
               ))}
+              <Environment preset="warehouse" />
             </Suspense>
             <OrbitControls
               rotateSpeed={0.5}
@@ -325,18 +381,29 @@ function AdminPage() {
         ) : selectedModel ? (
           <>
             <Canvas
+              shadows
               camera={{ position: [0, 0, 5] }}
               style={{ background: '#f0f0f0', flex: 1 }}
+              gl={{ antialias: true, alpha: false }}
             >
+              <color attach="background" args={['#f0f0f0']} />
+              <fog attach="fog" args={['#f0f0f0', 0, 20]} />
               <ambientLight intensity={0.5} />
-              <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
+              <directionalLight
+                position={[5, 5, 5]}
+                intensity={1}
+                castShadow
+                shadow-mapSize-width={2048}
+                shadow-mapSize-height={2048}
+              />
               <PerspectiveCamera makeDefault position={[0, 1, 5]} fov={50} />
               <Suspense fallback={<Loader />}>
                 <Model
-                  url={`http://localhost:3000/uploads/${selectedModel.filename}`}
+                  url={selectedModel ? getModelUrl(selectedModel.filename) : null}
                   position={[position.x, position.y, position.z]}
                   scale={[scale.x, scale.y, scale.z]}
                 />
+                <Environment preset="warehouse" />
               </Suspense>
               <OrbitControls
                 rotateSpeed={0.5}
@@ -356,14 +423,38 @@ function AdminPage() {
               <p><strong>Details:</strong> {details}</p>
             </div>
           </>
-        ) : (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <p>Select a model to preview or show store preview</p>
-          </div>
-        )}
-      </div>
+      ) : (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <p>Select a model to preview or show store preview</p>
+        </div>
+      )}
     </div>
-  );
+    <div>
+          <label>Rotation:</label>
+          <input
+            type="number"
+            value={rotation.x}
+            onChange={(e) => handleRotationChange('x', e.target.value)}
+            placeholder="X"
+            style={{ width: '50px', marginRight: '5px' }}
+          />
+          <input
+            type="number"
+            value={rotation.y}
+            onChange={(e) => handleRotationChange('y', e.target.value)}
+            placeholder="Y"
+            style={{ width: '50px', marginRight: '5px' }}
+          />
+          <input
+            type="number"
+            value={rotation.z}
+            onChange={(e) => handleRotationChange('z', e.target.value)}
+            placeholder="Z"
+            style={{ width: '50px' }}
+          />
+        </div>
+  </div>
+);
 }
 
 export default AdminPage;
