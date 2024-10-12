@@ -1,8 +1,11 @@
-import React, { Suspense, useRef, useState, useEffect } from 'react'
+import React, { Suspense, useRef, useState, useEffect,useMemo } from 'react'
 import axios from 'axios'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, useGLTF, PerspectiveCamera, Environment, Html } from '@react-three/drei'
 import * as THREE from 'three'
+import LEDLight from './LEDLight'  // Adjust the path as necessary
+import OvalLEDLight from './OvalLEDLight'  // Adjust the path as necessary
+import TubeLEDLight from './TubeLEDLight'
 
 function CursorManager({ isHovering }) {
   useEffect(() => {
@@ -14,16 +17,35 @@ function CursorManager({ isHovering }) {
   return null
 }
 
-function OptimizedModel({ url, position, rotation = [0, 0, 0], scale, onClick, isClickable = true }) {
+
+
+function OptimizedModel({ url, position, rotation = [0, 0, 0], scale, onClick, isClickable = true, isApiProduct = false }) {
   const group = useRef()
   const { scene, materials } = useGLTF(url)
   const [isHovered, setIsHovered] = useState(false)
-  const { gl } = useThree()
+  const { gl, raycaster, camera, mouse } = useThree()
 
-  const hoverColor = new THREE.Color('#B7E0FF')
+  const hoverColor = useMemo(() => new THREE.Color('#B7E0FF'), [])
+  const isStoreModel = url.includes('store.glb')
+
+  const hideMeshesByName = useMemo(() => (scene, namesToHide) => {
+    scene.traverse((object) => {
+      if (object.name && namesToHide.some(name => object.name.includes(name))) {
+        object.visible = false
+        object.traverse(child => {
+          child.visible = false
+        })
+      }
+    })
+  }, [])
 
   useEffect(() => {
     const clonedScene = scene.clone(true)
+
+    if (isStoreModel) {
+      hideMeshesByName(clonedScene, ['Object_69', 'Object_70', 'Object_71', 'Object_83', 'Object_82', 'Object_84'])
+    }
+
     clonedScene.traverse((child) => {
       if (child.isMesh) {
         child.material = child.material.clone()
@@ -31,43 +53,42 @@ function OptimizedModel({ url, position, rotation = [0, 0, 0], scale, onClick, i
         child.material.needsUpdate = true
       }
     })
+
     if (group.current) {
       group.current.add(clonedScene)
     }
 
     return () => {
-      if (group.current && group.current.children.length > 0) {
-        const sceneToRemove = group.current.children[0]
-        group.current.remove(sceneToRemove)
-        sceneToRemove.traverse((child) => {
+      if (group.current) {
+        while (group.current.children.length > 0) {
+          const child = group.current.children[0]
+          group.current.remove(child)
           if (child.isMesh) {
-            if (child.material) {
-              if (child.material.map) child.material.map.dispose()
-              child.material.dispose()
-            }
-            if (child.geometry) child.geometry.dispose()
+            child.geometry.dispose()
+            if (child.material.map) child.material.map.dispose()
+            child.material.dispose()
           }
-        })
+        }
       }
     }
-  }, [scene, materials])
+  }, [scene, materials, url, isStoreModel, hideMeshesByName])
 
   const handlePointerOver = (event) => {
-    if (!isClickable) return
+    if (!isClickable || !isApiProduct) return
     event.stopPropagation()
     setIsHovered(true)
     gl.domElement.style.cursor = 'pointer'
   }
 
   const handlePointerOut = (event) => {
-    if (!isClickable) return
+    if (!isClickable || !isApiProduct) return
     event.stopPropagation()
     setIsHovered(false)
     gl.domElement.style.cursor = 'default'
   }
 
   const handleClick = (event) => {
-    if (!isClickable) return
+    if (!isClickable || !isApiProduct) return
     event.stopPropagation()
     onClick(url)
   }
@@ -76,13 +97,13 @@ function OptimizedModel({ url, position, rotation = [0, 0, 0], scale, onClick, i
     if (group.current) {
       group.current.position.set(...position)
       group.current.rotation.set(...rotation)
-      group.current.scale.set(scale[0], scale[1], scale[2])  // Updated to use separate x, y, z scales
+      group.current.scale.set(scale[0], scale[1], scale[2])
     }
 
-    if (group.current) {
+    if (group.current && isApiProduct) {
       group.current.traverse((child) => {
         if (child.isMesh) {
-          if (isHovered && isClickable) {
+          if (isHovered) {
             child.material.emissive.copy(hoverColor)
             child.material.emissiveIntensity = 0.5
           } else {
@@ -103,7 +124,6 @@ function OptimizedModel({ url, position, rotation = [0, 0, 0], scale, onClick, i
     />
   )
 }
-
 function Loader() {
   return (
     <Html center>
@@ -140,20 +160,42 @@ function StoreScene({ onModelClick, models }) {
             position={[0, 0, 0]} 
             scale={[1, 1, 1]} 
             onClick={() => {}} 
-            isClickable={false} 
+            isClickable={true} 
           />
           {models.map((model) => (
             <OptimizedModel
-              key={model.name}
+              key={model.name}  // Using model.name as the key
               url={`http://localhost:3000/uploads/${model.filename}`}
               position={model.position}
-              rotation={[0, Math.PI / 4, 0]}
+              rotation={model.rotation.map((deg) => deg * (Math.PI / 180))}
               scale={model.scale}
               onClick={() => onModelClick(model)}
               isClickable={true}
+              isApiProduct={true}
+
             />
           ))}
-          <Environment preset="apartment" background />
+          <OvalLEDLight 
+            position={[-2.7, 2.96, 0]} 
+            scale={[1.5, 1, 1]} 
+            rotation={[Math.PI / 2, 0, 0]}
+            intensity={8}
+            color="#FFA500" 
+          />
+          <TubeLEDLight 
+            position={[2, 1.55, 0.040]} 
+            rotation={[0, 0, 0]} 
+            length={2.92} 
+            intensity={1.5} 
+            color="#FFA500" 
+          />
+          <TubeLEDLight 
+            position={[-9, 1.55, 0.040]} 
+            rotation={[0, 0, 0]} 
+            length={2.92} 
+            intensity={1.5} 
+            color="#FFA500" 
+          />
         </Suspense>
 
         <OrbitControls
@@ -161,15 +203,17 @@ function StoreScene({ onModelClick, models }) {
           zoomSpeed={0.5}
           panSpeed={0.5}
           minDistance={2}
-          maxDistance={20}
+          maxDistance={35}
           minPolarAngle={0}
           maxPolarAngle={Math.PI / 2}
           onChange={() => setIsHovering(false)}
         />
+
       </Canvas>
     </>
   )
 }
+
 
 function ModelPreview({ model }) {
   return (
