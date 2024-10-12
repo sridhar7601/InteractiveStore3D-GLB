@@ -164,7 +164,7 @@ app.get('/models', async (req, res) => {
 // Route to edit model details
 app.put('/models/:filename', async (req, res) => {
   const { filename } = req.params;
-  const { position, scale, details } = req.body;
+  const { position, scale, details,rotation } = req.body;
 
   try {
     let models = await getModelsFromS3();

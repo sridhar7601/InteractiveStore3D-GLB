@@ -55,7 +55,7 @@ function AdminPage() {
   const [details, setDetails] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [showStorePreview, setShowStorePreview] = useState(false);
-  const BASE_URL = 'http://localhost:3000'; // Update this if your backend URL changes
+  const BASE_URL = 'https://interactivestore3d-glb-1.onrender.com'; // Update this if your backend URL changes
 
   useEffect(() => {
     fetchModels();
@@ -347,7 +347,7 @@ const handleRotationChange = (axis, value) => {
             gl={{ antialias: true, alpha: false }}
           >
             <color attach="background" args={['#f0f0f0']} />
-            <fog attach="fog" args={['#f0f0f0', 0, 40]} />
+            {/* <fog attach="fog" args={['#f0f0f0', 0, 40]} /> */}
             <ambientLight intensity={0.5} />
             <directionalLight
               position={[5, 5, 5]}

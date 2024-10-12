@@ -133,7 +133,7 @@ function Loader() {
 
 function StoreScene({ onModelClick, models }) {
   const [isHovering, setIsHovering] = useState(false)
-  const BASE_URL = 'http://localhost:3000' // Update this if your backend URL changes
+  const BASE_URL = 'https://interactivestore3d-glb-1.onrender.com' // Update this if your backend URL changes
 
   const getModelUrl = (filename) => {
     return `${BASE_URL}/uploads/${encodeURIComponent(filename)}`
@@ -218,7 +218,7 @@ function StoreScene({ onModelClick, models }) {
 }
 
 function ModelPreview({ model }) {
-  const BASE_URL = 'http://localhost:3000' // Update this if your backend URL changes
+  const BASE_URL = 'https://interactivestore3d-glb-1.onrender.com' // Update this if your backend URL changes
 
   const getModelUrl = (filename) => {
     return `${BASE_URL}/uploads/${encodeURIComponent(filename)}`
@@ -292,7 +292,7 @@ function UserPage() {
   const [showModal, setShowModal] = useState(false)
   const [selectedModel, setSelectedModel] = useState(null)
   const [models, setModels] = useState([])
-  const BASE_URL = 'http://localhost:3000' // Update this if your backend URL changes
+  const BASE_URL = 'https://interactivestore3d-glb-1.onrender.com' // Update this if your backend URL changes
 
   useEffect(() => {
     fetchModels()
