@@ -51,8 +51,9 @@ export const DOMLoader = () => (
   </div>
 );
 
-// Add a default export that includes both loaders
-export default {
+const Loader = {
   CanvasLoader,
   DOMLoader
 };
+
+export default Loader;

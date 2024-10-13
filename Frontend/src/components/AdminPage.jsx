@@ -4,7 +4,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import OptimizedModel from '../models/OptimizedModel';
-import Loader from '../utils/Loader';
+import { CanvasLoader, DOMLoader } from '../utils/Loader';  // Import named exports
 
 function AdminPage() {
   const [models, setModels] = useState([]);
@@ -18,6 +18,7 @@ function AdminPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [showStorePreview, setShowStorePreview] = useState(false);
   const [price, setPrice] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const BASE_URL = 'https://interactivestore3d-glb-1.onrender.com';
 
   useEffect(() => {
@@ -25,11 +26,14 @@ function AdminPage() {
   }, []);
 
   const fetchModels = async () => {
+    setIsLoading(true);
     try {
       const response = await axios.get(`${BASE_URL}/models`);
       setModels(response.data);
     } catch (error) {
       console.error('Error fetching models:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -52,6 +56,7 @@ function AdminPage() {
     formData.append('price', price);
     formData.append('details', details);
 
+    setIsLoading(true);
     try {
       await axios.post(`${BASE_URL}/upload`, formData, {
         headers: {
@@ -64,6 +69,8 @@ function AdminPage() {
     } catch (error) {
       console.error('Error uploading file:', error);
       alert('Error uploading file. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -73,6 +80,7 @@ function AdminPage() {
     setRotation({ x: model.rotation[0], y: model.rotation[1], z: model.rotation[2] });
     setScale({ x: model.scale[0], y: model.scale[1], z: model.scale[2] });
     setDetails(model.details);
+    setPrice(model.price || 0);
     setIsEditing(false);
   };
 
@@ -81,12 +89,13 @@ function AdminPage() {
   };
 
   const handleUpdate = async () => {
+    setIsLoading(true);
     try {
       const response = await axios.put(`${BASE_URL}/models/${selectedModel.filename}`, {
         position: [position.x, position.y, position.z],
         rotation: [rotation.x, rotation.y, rotation.z],
         scale: [scale.x, scale.y, scale.z],
-        price: price ,// Add price to update
+        price: price,
         details: details
       });
       setSelectedModel(response.data.model);
@@ -96,6 +105,8 @@ function AdminPage() {
     } catch (error) {
       console.error('Error updating model:', error);
       alert('Error updating model. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -106,6 +117,7 @@ function AdminPage() {
     setRotation({ x: 0, y: 0, z: 0 });
     setScale({ x: 1, y: 1, z: 1 });
     setDetails('');
+    setPrice(0);
   };
 
   const handleChange = (setter) => (e) => {
@@ -123,19 +135,19 @@ function AdminPage() {
           placeholder="Model Name"
           style={{ marginBottom: '10px', width: '100%' }}
         />
+        <input
+          type="number"
+          value={price}
+          onChange={(e) => setPrice(parseFloat(e.target.value))}
+          placeholder="Price"
+          style={{ marginBottom: '10px', width: '100%' }}
+        />
         <input 
           type="file" 
           onChange={handleFileSelect} 
           accept=".glb" 
           style={{ marginBottom: '10px' }} 
         />
-        <input
-        type="number"
-        value={price}
-        onChange={(e) => setPrice(parseFloat(e.target.value))}
-        placeholder="Price"
-        style={{ marginBottom: '10px', width: '100%' }}
-      />
         {['position', 'rotation', 'scale'].map(prop => (
           <div key={prop}>
             <label>{prop.charAt(0).toUpperCase() + prop.slice(1)}:</label>
@@ -195,7 +207,7 @@ function AdminPage() {
         >
           <ambientLight intensity={0.5} />
           <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
-          <Suspense fallback={<Loader />}>
+          <Suspense fallback={<CanvasLoader />}>
             {showStorePreview ? (
               <>
                 <OptimizedModel url="/store.glb" position={[0, 0, 0]} scale={[1, 1, 1]} />
@@ -222,6 +234,7 @@ function AdminPage() {
           <OrbitControls />
         </Canvas>
       </div>
+      {isLoading && <DOMLoader />}
     </div>
   );
 }
