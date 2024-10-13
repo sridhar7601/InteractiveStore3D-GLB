@@ -81,6 +81,9 @@ function UserPage() {
           <ModelPreview model={selectedModel} />
           <div style={{ marginTop: '20px', color: 'black' }}>
             <h3>Model Details</h3>
+            {selectedModel.price ? (
+  <p><strong>Price:</strong> ${selectedModel.price.toFixed(2)}</p>
+) : null}
             <p><strong>Position:</strong> X: {selectedModel.position[0]}, Y: {selectedModel.position[1]}, Z: {selectedModel.position[2]}</p>
             <p><strong>Scale:</strong> X: {selectedModel.scale[0]}, Y: {selectedModel.scale[1]}, Z: {selectedModel.scale[2]}</p>
             {selectedModel.details && <p><strong>Details:</strong> {selectedModel.details}</p>}

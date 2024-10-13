@@ -17,6 +17,7 @@ function AdminPage() {
   const [details, setDetails] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [showStorePreview, setShowStorePreview] = useState(false);
+  const [price, setPrice] = useState(0);
   const BASE_URL = 'https://interactivestore3d-glb-1.onrender.com';
 
   useEffect(() => {
@@ -48,6 +49,7 @@ function AdminPage() {
     formData.append('rotation', JSON.stringify([rotation.x, rotation.y, rotation.z]));
     formData.append('position', JSON.stringify([position.x, position.y, position.z]));
     formData.append('scale', JSON.stringify([scale.x, scale.y, scale.z]));
+    formData.append('price', price);
     formData.append('details', details);
 
     try {
@@ -84,6 +86,7 @@ function AdminPage() {
         position: [position.x, position.y, position.z],
         rotation: [rotation.x, rotation.y, rotation.z],
         scale: [scale.x, scale.y, scale.z],
+        price: price ,// Add price to update
         details: details
       });
       setSelectedModel(response.data.model);
@@ -126,6 +129,13 @@ function AdminPage() {
           accept=".glb" 
           style={{ marginBottom: '10px' }} 
         />
+        <input
+        type="number"
+        value={price}
+        onChange={(e) => setPrice(parseFloat(e.target.value))}
+        placeholder="Price"
+        style={{ marginBottom: '10px', width: '100%' }}
+      />
         {['position', 'rotation', 'scale'].map(prop => (
           <div key={prop}>
             <label>{prop.charAt(0).toUpperCase() + prop.slice(1)}:</label>

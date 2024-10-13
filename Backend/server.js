@@ -134,7 +134,9 @@ app.post('/upload', upload.single('model'), async (req, res) => {
       position: position,
       rotation: rotation, // Include rotation in model info
       scale: scale,
-      details: details
+      details: details,
+      price: parseFloat(req.body.price) || 0 // Add price field
+
     };
 
     let models = await getModelsFromS3();
@@ -180,7 +182,8 @@ app.put('/models/:filename', async (req, res) => {
       position: position || models[modelIndex].position,
       rotation: rotation || models[modelIndex].rotation, // Include rotation in update
       scale: scale || models[modelIndex].scale,
-      details: details || models[modelIndex].details
+      details: details || models[modelIndex].details,
+      price: parseFloat(req.body.price) || models[modelIndex].price // Update price
     };
 
     await saveModelsToS3(models);
