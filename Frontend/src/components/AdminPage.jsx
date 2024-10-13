@@ -109,7 +109,18 @@ function AdminPage() {
       setIsLoading(false);
     }
   };
-
+  const clearForm = () => {
+    setSelectedModel(null);
+    setModelName('');
+    setSelectedFile(null);
+    setPosition({ x: 0, y: 0, z: 0 });
+    setRotation({ x: 0, y: 0, z: 0 });
+    setScale({ x: 1, y: 1, z: 1 });
+    setDetails('');
+    setPrice(0);
+    setIsEditing(false);
+    setShowStorePreview(false);
+  };
   const resetForm = () => {
     setModelName('');
     setSelectedFile(null);
@@ -125,8 +136,55 @@ function AdminPage() {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh' }}>
-      <div style={{ width: '300px', padding: '20px', borderRight: '1px solid #ccc', overflowY: 'auto' }}>
+    <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+      <Canvas
+        shadows
+        camera={{ position: [0, 5, 10], fov: 60 }}
+        style={{ background: '#f0f0f0', position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+      >
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
+        <Suspense fallback={<CanvasLoader />}>
+          {showStorePreview ? (
+            <>
+              <OptimizedModel url="/store.glb" position={[0, 0, 0]} scale={[1, 1, 1]} />
+              {models.map((model) => (
+                <OptimizedModel
+                  key={model.filename}
+                  url={`${BASE_URL}/uploads/${model.filename}`}
+                  position={model.position}
+                  rotation={model.rotation.map(deg => deg * (Math.PI / 180))}
+                  scale={model.scale}
+                />
+              ))}
+            </>
+          ) : selectedModel && (
+            <OptimizedModel
+              url={`${BASE_URL}/uploads/${selectedModel.filename}`}
+              position={[position.x, position.y, position.z]}
+              rotation={[rotation.x, rotation.y, rotation.z].map(deg => deg * (Math.PI / 180))}
+              scale={[scale.x, scale.y, scale.z]}
+            />
+          )}
+          <Environment preset="warehouse" />
+        </Suspense>
+        <OrbitControls />
+      </Canvas>
+
+      <div style={{
+        position: 'absolute',
+        top: '20px',
+        left: '20px',
+        width: '300px',
+        maxHeight: 'calc(100vh - 40px)',
+        overflowY: 'auto',
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '10px',
+        padding: '20px',
+        color: 'white',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+      }}>
         <h2>Admin Panel</h2>
         <input
           type="text"
@@ -170,26 +228,47 @@ function AdminPage() {
           placeholder="Enter model details"
           style={{ width: '100%', height: '100px', marginBottom: '10px' }}
         />
-        {!selectedModel && (
+        {!selectedModel ? (
           <button onClick={handleUpload} disabled={!modelName.trim() || !selectedFile}>
             Upload Model
           </button>
-        )}
-        {selectedModel && !isEditing && (
-          <button onClick={handleEdit}>
-            Edit Model
-          </button>
-        )}
-        {selectedModel && isEditing && (
+        ) : (
           <button onClick={handleUpdate}>
             Update Model
           </button>
         )}
+        <button 
+            onClick={clearForm}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#f44336',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              flex: 1,
+              marginLeft: '5px'
+            }}
+          >
+            Clear
+          </button>
         <h3>Uploaded Models</h3>
-        <ul>
+        <ul style={{ listStyle: 'none', padding: 0 }}>
           {models.map((model) => (
-            <li key={model.filename}>
-              <button onClick={() => handleModelSelect(model)}>
+            <li key={model.filename} style={{ marginBottom: '5px' }}>
+              <button 
+                onClick={() => handleModelSelect(model)}
+                style={{
+                  background: selectedModel && selectedModel.filename === model.filename ? '#4CAF50' : '#2196F3',
+                  color: 'white',
+                  border: 'none',
+                  padding: '5px 10px',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'left'
+                }}
+              >
                 {model.name || model.filename}
               </button>
             </li>
@@ -198,41 +277,6 @@ function AdminPage() {
         <button onClick={() => setShowStorePreview(!showStorePreview)}>
           {showStorePreview ? 'Hide Store Preview' : 'Show Store Preview'}
         </button>
-      </div>
-      <div style={{ flex: 1 }}>
-        <Canvas
-          shadows
-          camera={{ position: [0, 5, 10], fov: 60 }}
-          style={{ background: '#f0f0f0' }}
-        >
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
-          <Suspense fallback={<CanvasLoader />}>
-            {showStorePreview ? (
-              <>
-                <OptimizedModel url="/store.glb" position={[0, 0, 0]} scale={[1, 1, 1]} />
-                {models.map((model) => (
-                  <OptimizedModel
-                    key={model.filename}
-                    url={`${BASE_URL}/uploads/${model.filename}`}
-                    position={model.position}
-                    rotation={model.rotation.map(deg => deg * (Math.PI / 180))}
-                    scale={model.scale}
-                  />
-                ))}
-              </>
-            ) : selectedModel && (
-              <OptimizedModel
-                url={`${BASE_URL}/uploads/${selectedModel.filename}`}
-                position={[position.x, position.y, position.z]}
-                rotation={[rotation.x, rotation.y, rotation.z].map(deg => deg * (Math.PI / 180))}
-                scale={[scale.x, scale.y, scale.z]}
-              />
-            )}
-            <Environment preset="warehouse" />
-          </Suspense>
-          <OrbitControls />
-        </Canvas>
       </div>
       {isLoading && <DOMLoader />}
     </div>
