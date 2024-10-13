@@ -6,7 +6,7 @@ import TubeLEDLight from '../lights/TubeLEDLight';
 import StoreSign from '../models/StoreSign';
 import SnowGround from '../models/SnowGround';
 import SnowEffect from './SnowEffect';
-import Loader from '../utils/Loader';
+import { CanvasLoader } from '../utils/Loader';  // Use named import
 
 function StoreScene({ onModelClick, models }) {
   const BASE_URL = 'https://interactivestore3d-glb-1.onrender.com';
@@ -23,7 +23,7 @@ function StoreScene({ onModelClick, models }) {
       
       <ambientLight intensity={0.2} />
 
-      <Suspense fallback={<Loader />}>
+      <Suspense fallback={<CanvasLoader />}>
         <OptimizedModel 
           url="/store.glb" 
           position={[0, 0, 0]} 
