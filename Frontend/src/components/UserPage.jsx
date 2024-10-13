@@ -7,13 +7,15 @@ import StoreScene from '../scenes/StoreScene';
 import GlassModal from './GlassModal';
 import ModelPreview from './ModelPreview';
 import VoiceNavigation from './VoiceNavigation';
-import Loader from '../utils/Loader';
+import { CanvasLoader, DOMLoader } from '../utils/Loader';  // Use named imports
+
 
 function UserPage() {
   const [showModal, setShowModal] = useState(false);
   const [selectedModel, setSelectedModel] = useState(null);
   const [models, setModels] = useState([]);
   const [cart, setCart] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const BASE_URL = 'https://interactivestore3d-glb-1.onrender.com';
 
   useEffect(() => {
@@ -22,10 +24,13 @@ function UserPage() {
 
   const fetchModels = async () => {
     try {
+      setIsLoading(true);
       const response = await axios.get(`${BASE_URL}/models`);
       setModels(response.data);
     } catch (error) {
       console.error('Error fetching models:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -56,8 +61,8 @@ function UserPage() {
         shadows
         camera={{ position: [0, 5, 10], fov: 60 }}
       >
-        <Suspense fallback={<Loader />}>
-          <StoreScene onModelClick={handleModelClick} models={models} />
+        <Suspense fallback={<CanvasLoader />}>
+          {!isLoading && <StoreScene onModelClick={handleModelClick} models={models} />}
         </Suspense>
         <OrbitControls
           rotateSpeed={0.5}
@@ -69,6 +74,7 @@ function UserPage() {
           maxPolarAngle={Math.PI / 2}
         />
       </Canvas>
+      {isLoading && <DOMLoader />}
       {showModal && selectedModel && (
         <GlassModal onClose={() => setShowModal(false)} model={selectedModel} onAddToCart={addToCart}>
           <h2 style={{ color: '#086C62', textAlign: 'center' }}>{selectedModel.name}</h2>
