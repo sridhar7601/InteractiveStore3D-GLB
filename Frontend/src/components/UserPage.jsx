@@ -8,6 +8,8 @@ import GlassModal from './GlassModal';
 import ModelPreview from './ModelPreview';
 import VoiceNavigation from './VoiceNavigation';
 import { CanvasLoader, DOMLoader } from '../utils/Loader';  // Use named imports
+import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 
 function UserPage() {
@@ -17,6 +19,7 @@ function UserPage() {
   const [cart, setCart] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const BASE_URL = 'https://interactivestore3d-glb-1.onrender.com';
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchModels();
@@ -41,7 +44,7 @@ function UserPage() {
 
   const addToCart = (model) => {
     setCart(prevCart => [...prevCart, model]);
-    alert(`${model.name} added to cart!`);
+    toast.success(`${model.name} added to cart!`);
   };
 
   const handleVoiceNavigation = (destination) => {
@@ -90,18 +93,41 @@ function UserPage() {
           </div>
         </GlassModal>
       )}
-      {/* <div style={{
-        position: 'fixed',
-        top: '20px',
-        left: '20px',
-        backgroundColor: 'white',
-        padding: '10px',
-        borderRadius: '50%',
-        zIndex: 1000,
-      }}>
-        🛒 {cart.length}
-      </div> */}
+      <div style={{
+  position: 'fixed',
+  top: '20px',
+  left: '20px',
+  zIndex: 1000,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '10px',
+}}>
+  <button
+    onClick={() => navigate('/admin')}
+    style={{
+      padding: '10px 20px',
+      backgroundColor: 'grey',
+      color: 'white',
+      border: 'none',
+      borderRadius: '5px',
+      cursor: 'pointer',
+      fontSize: '16px',
+      transition: 'background-color 0.3s',
+    }}
+  >
+    Back to Admin
+  </button>
+  {/* <div style={{
+    backgroundColor: 'white',
+    padding: '10px',
+    borderRadius: '50%',
+    textAlign: 'center',
+  }}>
+    🛒 {cart.length}
+  </div> */}
+</div>
     </div>
+
   );
 }
 

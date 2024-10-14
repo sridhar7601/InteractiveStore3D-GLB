@@ -5,6 +5,9 @@ import { OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei
 import * as THREE from 'three';
 import OptimizedModel from '../models/OptimizedModel';
 import { CanvasLoader, DOMLoader } from '../utils/Loader';
+import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
+
 
 const BASE_URL = 'https://interactivestore3d-glb-1.onrender.com';
 
@@ -34,6 +37,8 @@ const buttonStyle = {
 };
 
 function AdminPage() {
+  const navigate = useNavigate();
+
   const [models, setModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState(null);
   const [modelName, setModelName] = useState('');
@@ -69,7 +74,7 @@ function AdminPage() {
 
   const handleUpload = async () => {
     if (!modelName.trim() || !selectedFile) {
-      alert('Please enter a model name and select a file before uploading.');
+      toast.error('Please enter a model name and select a file before uploading.');
       return;
     }
 
@@ -91,10 +96,10 @@ function AdminPage() {
       });
       fetchModels();
       resetForm();
-      alert('File uploaded successfully!');
+      toast.success('File uploaded successfully!');
     } catch (error) {
       console.error('Error uploading file:', error);
-      alert('Error uploading file. Please try again.');
+      toast.error('Error uploading file. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -110,6 +115,7 @@ function AdminPage() {
     setIsEditing(false);
   };
 
+  
   const handleUpdate = async () => {
     setIsLoading(true);
     try {
@@ -123,10 +129,10 @@ function AdminPage() {
       setSelectedModel(response.data.model);
       setIsEditing(false);
       fetchModels();
-      alert('Model updated successfully!');
+      toast.success('Model updated successfully!');
     } catch (error) {
       console.error('Error updating model:', error);
-      alert('Error updating model. Please try again.');
+      toast.error('Error updating model. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -213,6 +219,16 @@ function AdminPage() {
         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
       }}>
         <h2 style={{ marginBottom: '20px', color: '#3498db' }}>Admin Panel</h2>
+        <button 
+          onClick={() => navigate('/user')}
+          style={{
+            ...buttonStyle,
+            backgroundColor: '#9b59b6',
+            marginTop: '20px',
+          }}
+        >
+          Go to User Page
+        </button>
         <input
           type="text"
           value={modelName}
