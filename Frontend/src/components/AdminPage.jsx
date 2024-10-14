@@ -4,7 +4,34 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import OptimizedModel from '../models/OptimizedModel';
-import { CanvasLoader, DOMLoader } from '../utils/Loader';  // Import named exports
+import { CanvasLoader, DOMLoader } from '../utils/Loader';
+
+const BASE_URL = 'https://interactivestore3d-glb-1.onrender.com';
+
+const inputStyle = {
+  width: '100%',
+  padding: '10px',
+  marginBottom: '10px',
+  borderRadius: '5px',
+  border: '1px solid #bdc3c7',
+  fontSize: '14px',
+  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  color: 'white',
+  transition: 'border-color 0.3s ease',
+};
+
+const buttonStyle = {
+  padding: '10px 15px',
+  backgroundColor: '#3498db',
+  color: 'white',
+  border: 'none',
+  borderRadius: '5px',
+  cursor: 'pointer',
+  fontSize: '14px',
+  transition: 'background-color 0.3s ease',
+  width: '100%',
+  marginBottom: '10px',
+};
 
 function AdminPage() {
   const [models, setModels] = useState([]);
@@ -16,10 +43,9 @@ function AdminPage() {
   const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 });
   const [details, setDetails] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [showStorePreview, setShowStorePreview] = useState(false);
+  const [showStorePreview, setShowStorePreview] = useState(true);
   const [price, setPrice] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const BASE_URL = 'https://interactivestore3d-glb-1.onrender.com';
 
   useEffect(() => {
     fetchModels();
@@ -84,10 +110,6 @@ function AdminPage() {
     setIsEditing(false);
   };
 
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
   const handleUpdate = async () => {
     setIsLoading(true);
     try {
@@ -109,6 +131,7 @@ function AdminPage() {
       setIsLoading(false);
     }
   };
+
   const clearForm = () => {
     setSelectedModel(null);
     setModelName('');
@@ -121,6 +144,7 @@ function AdminPage() {
     setIsEditing(false);
     setShowStorePreview(false);
   };
+
   const resetForm = () => {
     setModelName('');
     setSelectedFile(null);
@@ -173,100 +197,103 @@ function AdminPage() {
 
       <div style={{
         position: 'absolute',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
         top: '20px',
         left: '20px',
         width: '300px',
         maxHeight: 'calc(100vh - 40px)',
         overflowY: 'auto',
-        background: 'rgba(255, 255, 255, 0.1)',
+        background: 'rgba(0, 0, 0, 0.7)',
         backdropFilter: 'blur(10px)',
         borderRadius: '10px',
         padding: '20px',
         color: 'white',
         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
       }}>
-        <h2>Admin Panel</h2>
+        <h2 style={{ marginBottom: '20px', color: '#3498db' }}>Admin Panel</h2>
         <input
           type="text"
           value={modelName}
           onChange={(e) => setModelName(e.target.value)}
           placeholder="Model Name"
-          style={{ marginBottom: '10px', width: '100%' }}
+          style={inputStyle}
         />
         <input
           type="number"
           value={price}
           onChange={(e) => setPrice(parseFloat(e.target.value))}
           placeholder="Price"
-          style={{ marginBottom: '10px', width: '100%' }}
+          style={inputStyle}
         />
         <input 
           type="file" 
           onChange={handleFileSelect} 
           accept=".glb" 
-          style={{ marginBottom: '10px' }} 
+          style={{ ...inputStyle, padding: '10px 0' }} 
         />
         {['position', 'rotation', 'scale'].map(prop => (
-          <div key={prop}>
-            <label>{prop.charAt(0).toUpperCase() + prop.slice(1)}:</label>
-            {['x', 'y', 'z'].map(axis => (
-              <input
-                key={axis}
-                type="number"
-                name={axis}
-                value={eval(prop)[axis]}
-                onChange={handleChange(eval(`set${prop.charAt(0).toUpperCase() + prop.slice(1)}`))}
-                placeholder={axis.toUpperCase()}
-                style={{ width: '50px', marginRight: '5px' }}
-              />
-            ))}
+          <div key={prop} style={{ marginBottom: '10px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', color: '#bdc3c7' }}>
+              {prop.charAt(0).toUpperCase() + prop.slice(1)}:
+            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              {['x', 'y', 'z'].map(axis => (
+                <input
+                  key={axis}
+                  type="number"
+                  name={axis}
+                  value={eval(prop)[axis]}
+                  onChange={handleChange(eval(`set${prop.charAt(0).toUpperCase() + prop.slice(1)}`))}
+                  placeholder={axis.toUpperCase()}
+                  style={{ ...inputStyle, width: '30%', marginBottom: 0 }}
+                />
+              ))}
+            </div>
           </div>
         ))}
         <textarea
           value={details}
           onChange={(e) => setDetails(e.target.value)}
           placeholder="Enter model details"
-          style={{ width: '100%', height: '100px', marginBottom: '10px' }}
+          style={{
+            ...inputStyle,
+            height: '120px',
+            resize: 'vertical',
+            padding: '20px',
+            width: '90%',         
+            marginBottom: '20px',
+          }}
         />
         {!selectedModel ? (
-          <button onClick={handleUpload} disabled={!modelName.trim() || !selectedFile}>
+          <button onClick={handleUpload} disabled={!modelName.trim() || !selectedFile} style={buttonStyle}>
             Upload Model
           </button>
         ) : (
-          <button onClick={handleUpdate}>
+          <button onClick={handleUpdate} style={buttonStyle}>
             Update Model
           </button>
         )}
         <button 
-            onClick={clearForm}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#f44336',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              flex: 1,
-              marginLeft: '5px'
-            }}
-          >
-            Clear
-          </button>
-        <h3>Uploaded Models</h3>
-        <ul style={{ listStyle: 'none', padding: 0 }}>
+          onClick={clearForm}
+          style={{
+            ...buttonStyle,
+            backgroundColor: '#e74c3c',
+          }}
+        >
+          Clear
+        </button>
+        <h3 style={{ marginTop: '20px', marginBottom: '10px', color: '#3498db' }}>Uploaded Models</h3>
+        <ul style={{ listStyle: 'none', padding: 0, marginBottom: '20px' }}>
           {models.map((model) => (
             <li key={model.filename} style={{ marginBottom: '5px' }}>
               <button 
                 onClick={() => handleModelSelect(model)}
                 style={{
-                  background: selectedModel && selectedModel.filename === model.filename ? '#4CAF50' : '#2196F3',
-                  color: 'white',
-                  border: 'none',
-                  padding: '5px 10px',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                  width: '100%',
-                  textAlign: 'left'
+                  ...buttonStyle,
+                  backgroundColor: selectedModel && selectedModel.filename === model.filename ? '#27ae60' : '#2980b9',
+                  marginBottom: '5px',
                 }}
               >
                 {model.name || model.filename}
@@ -274,7 +301,13 @@ function AdminPage() {
             </li>
           ))}
         </ul>
-        <button onClick={() => setShowStorePreview(!showStorePreview)}>
+        <button 
+          onClick={() => setShowStorePreview(!showStorePreview)}
+          style={{
+            ...buttonStyle,
+            backgroundColor: '#f39c12',
+          }}
+        >
           {showStorePreview ? 'Hide Store Preview' : 'Show Store Preview'}
         </button>
       </div>
